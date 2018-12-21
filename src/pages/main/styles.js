@@ -42,6 +42,16 @@ const styles = StyleSheet.create({
     borderRadius: metrics.baseRadius
   },
 
+  actionButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end"
+  },
+
+  actionModalButtons: {
+    flex: 1,
+    flexDirection: "row"
+  },
+
   fab: {
     backgroundColor: colors.success
   }

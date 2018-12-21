@@ -42,9 +42,11 @@ export default class Main extends Component {
   state = {
     flashVisible: false,
     flashMessage: "",
-    modalVisible: false,
+    addModalVisible: false,
+    editModalVisible: false,
     debtors: [],
     debtorData: {
+      id: 0,
       name: "",
       email: "",
       phone: ""
@@ -99,10 +101,86 @@ export default class Main extends Component {
       }
     }
   };
+
+  editDebtor = async () => {
+    try {
+      const {
+        debtorData: { id, name, phone, email }
+      } = this.state;
+
+      // Update API
+      const editDebtorResponse = await api.put(`/debtors/${id}`, {
+        debtor: {
+          name,
+          phone,
+          email
+        }
+      });
+
+      const result = editDebtorResponse.data.data;
+
+      // Copy of Debtors State
+      let debtors = [...this.state.debtors];
+
+      // Get index of element I want to update
+      let index = debtors.findIndex(el => el.id == id);
+
+      // Update Array
+      debtors[index] = {
+        ...debtors[index],
+        name: name,
+        phone: phone,
+        email: email,
+        avatar: result.avatar,
+        key: id
+      };
+
+      // Update State
+      this.setState({ debtors });
+
+      this.setFlash("Edição realizada com sucesso!");
+      this.clearForm();
+      this.closeEditModal();
+    } catch (err) {
+      const result = err.response.data;
+      for (var key in result["errors"]) {
+        console.log(key);
+        if (key == "name") {
+          this.setState({ nameError: true });
+        } else if (key == "email") {
+          this.setState({ emailError: true });
+        } else if (key == "phone") {
+          this.setState({ phoneError: true });
+        }
+      }
+    }
+  };
   //#endregion
 
-  showAddModal = () => {
+  //#region Modal Methods
+  openAddModal = () => {
     this.refs.myModal.open();
+  };
+
+  closeAddModal = () => {
+    this.refs.myModal.close();
+  };
+
+  openEditModal = debtor => {
+    this.setState({
+      debtorData: {
+        id: debtor.id,
+        name: debtor.name,
+        email: debtor.email,
+        phone: debtor.phone
+      }
+    });
+
+    this.refs.myEditModal.open();
+  };
+
+  closeEditModal = () => {
+    this.refs.myEditModal.close();
   };
 
   setFlash = message => {
@@ -121,6 +199,149 @@ export default class Main extends Component {
       phoneError: false
     });
   };
+
+  renderEditModal = () => (
+    <Modal
+      ref={"myEditModal"}
+      isOpen={this.state.editModalVisible}
+      style={styles.modal}
+      position="center"
+      backdrop={true}
+      onClosed={() => {
+        this.clearForm();
+      }}
+    >
+      <Text style={styles.modalTitle}>Editar Devedor</Text>
+      <Form>
+        <Item error={this.state.nameError}>
+          <Icon active name="contact" />
+          <Input
+            placeholder="Nome"
+            value={this.state.debtorData.name}
+            onChangeText={this.handleNameChange}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </Item>
+        <Item error={this.state.emailError}>
+          <Icon active name="at" />
+          <Input
+            placeholder="E-mail"
+            value={this.state.debtorData.email}
+            onChangeText={this.handleEmailChange}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+          />
+        </Item>
+        <Item error={this.state.phoneError}>
+          <Icon active name="call" />
+          <Input
+            placeholder="Telefone"
+            value={this.state.debtorData.phone}
+            onChangeText={this.handlePhoneChange}
+            autoCapitalize="none"
+            autoCorrect={false}
+            dataDetectorTypes="phoneNumber"
+            keyboardType="phone-pad"
+          />
+        </Item>
+      </Form>
+      <View style={styles.actionModalButtons}>
+        <Button
+          iconLeft
+          style={styles.buttonSaveModal}
+          onPress={() => {
+            this.editDebtor();
+            return;
+          }}
+        >
+          <Icon name="md-create" />
+          <Text>Editar</Text>
+        </Button>
+        <Button
+          iconLeft
+          style={styles.buttonCancelModal}
+          onPress={this.closeEditModal}
+        >
+          <Icon name="close-circle" />
+          <Text>Cancelar</Text>
+        </Button>
+      </View>
+    </Modal>
+  );
+
+  renderAddModal = () => (
+    <Modal
+      ref={"myModal"}
+      isOpen={this.state.addModalVisible}
+      style={styles.modal}
+      position="center"
+      backdrop={true}
+      onClosed={() => {
+        this.clearForm();
+      }}
+    >
+      <Text style={styles.modalTitle}>Incluir Devedor</Text>
+      <Form>
+        <Item error={this.state.nameError}>
+          <Icon active name="contact" />
+          <Input
+            placeholder="Nome"
+            value={this.state.debtorData.name}
+            onChangeText={this.handleNameChange}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </Item>
+        <Item error={this.state.emailError}>
+          <Icon active name="at" />
+          <Input
+            placeholder="E-mail"
+            value={this.state.debtorData.email}
+            onChangeText={this.handleEmailChange}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+          />
+        </Item>
+        <Item error={this.state.phoneError}>
+          <Icon active name="call" />
+          <Input
+            placeholder="Telefone"
+            value={this.state.debtorData.phone}
+            onChangeText={this.handlePhoneChange}
+            autoCapitalize="none"
+            autoCorrect={false}
+            dataDetectorTypes="phoneNumber"
+            keyboardType="phone-pad"
+          />
+        </Item>
+      </Form>
+      <View style={styles.actionModalButtons}>
+        <Button
+          iconLeft
+          style={styles.buttonSaveModal}
+          onPress={() => {
+            this.saveDebtor();
+            return;
+          }}
+        >
+          <Icon name="beer" />
+          <Text>Salvar</Text>
+        </Button>
+        <Button
+          iconLeft
+          style={styles.buttonCancelModal}
+          onPress={this.closeAddModal}
+        >
+          <Icon name="close-circle" />
+          <Text>Cancelar</Text>
+        </Button>
+      </View>
+    </Modal>
+  );
+  //#endregion
 
   //#region Event Handles
   handleNameChange = name => {
@@ -169,8 +390,8 @@ export default class Main extends Component {
               {/* <Text note>{debtor.email}</Text> */}
               <Text note>{debtor.phone}</Text>
             </Body>
-            <Right style={{ flexDirection: "row", justifyContent: "flex-end" }}>
-              <Button transparent onPress={() => alert("Edit pressed")}>
+            <Right style={styles.actionButtons}>
+              <Button transparent onPress={() => this.openEditModal(debtor)}>
                 <Icon
                   style={{
                     marginRight: metrics.baseMargin,
@@ -188,77 +409,6 @@ export default class Main extends Component {
       </Card>
     ));
 
-  renderAddModal = () => (
-    <Modal
-      ref={"myModal"}
-      isOpen={this.state.modalVisible}
-      style={styles.modal}
-      position="center"
-      backdrop={true}
-      onClosed={() => {
-        this.clearForm();
-      }}
-    >
-      <Text style={styles.modalTitle}>Incluir Devedor</Text>
-      <Form>
-        <Item error={this.state.nameError}>
-          <Icon active name="contact" />
-          <Input
-            placeholder="Nome"
-            value={this.state.debtorData.name}
-            onChangeText={this.handleNameChange}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </Item>
-        <Item error={this.state.emailError}>
-          <Icon active name="at" />
-          <Input
-            placeholder="E-mail"
-            value={this.state.debtorData.email}
-            onChangeText={this.handleEmailChange}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="email-address"
-          />
-        </Item>
-        <Item error={this.state.phoneError}>
-          <Icon active name="call" />
-          <Input
-            placeholder="Telefone"
-            value={this.state.debtorData.phone}
-            onChangeText={this.handlePhoneChange}
-            autoCapitalize="none"
-            autoCorrect={false}
-            dataDetectorTypes="phoneNumber"
-            keyboardType="phone-pad"
-          />
-        </Item>
-      </Form>
-      <View style={{ flex: 1, flexDirection: "row" }}>
-        <Button
-          iconLeft
-          style={styles.buttonSaveModal}
-          onPress={() => {
-            this.saveDebtor();
-            return;
-          }}
-        >
-          <Icon name="beer" />
-          <Text>Salvar</Text>
-        </Button>
-        <Button
-          iconLeft
-          style={styles.buttonCancelModal}
-          onPress={() => this.refs.myModal.close()}
-        >
-          <Icon name="close-circle" />
-          <Text>Cancelar</Text>
-        </Button>
-      </View>
-    </Modal>
-  );
-
   render() {
     return (
       <Container style={styles.container}>
@@ -274,6 +424,7 @@ export default class Main extends Component {
 
         {/* Modal */}
         {this.renderAddModal()}
+        {this.renderEditModal()}
 
         {/* Floating Button */}
         <Fab
@@ -282,7 +433,7 @@ export default class Main extends Component {
           style={styles.fab}
           position="bottomRight"
           onPress={() => {
-            this.showAddModal();
+            this.openAddModal();
           }}
         >
           <Icon name="add" />
