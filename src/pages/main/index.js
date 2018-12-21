@@ -18,7 +18,7 @@ import {
   Right,
   Icon
 } from "native-base";
-import { StatusBar } from "react-native";
+import { StatusBar, Alert } from "react-native";
 
 import api from "../../services/api";
 import styles from "./styles";
@@ -80,11 +80,13 @@ export default class Main extends Component {
         }
       });
 
-      this.setFlash("Cadastro realizado com sucesso!");
-      this.clearForm();
       this.setState({
         debtors: [...this.state.debtors, newDebtorResponse.data.data]
       });
+
+      this.setFlash("Cadastro realizado com sucesso!");
+      this.clearForm();
+      this.closeAddModal();
     } catch (err) {
       const result = err.response.data;
       console.log(result);
@@ -154,6 +156,16 @@ export default class Main extends Component {
         }
       }
     }
+  };
+
+  deleteDebtor = async id => {
+    try {
+      const deleteDebtorResponse = await api.delete(`/debtors/${id}`);
+
+      // Create an array without deleted element
+      const debtors = this.state.debtors.filter(debtor => debtor.id != id);
+      this.setState({ debtors });
+    } catch (err) {}
   };
   //#endregion
 
@@ -400,7 +412,27 @@ export default class Main extends Component {
                   name="md-create"
                 />
               </Button>
-              <Button transparent onPress={() => alert("Delete pressed")}>
+              <Button
+                transparent
+                onPress={() => {
+                  Alert.alert(
+                    "Exclusão",
+                    "Você tem certeza que deseja excluir este devedor?",
+                    [
+                      {
+                        text: "OK",
+                        onPress: () => this.deleteDebtor(debtor.id)
+                      },
+                      {
+                        text: "Cancel",
+                        onPress: () => console.log(`ID pressed: ${debtor.id}`),
+                        style: "cancel"
+                      }
+                    ],
+                    { cancelable: false }
+                  );
+                }}
+              >
                 <Icon name="ios-trash" style={{ color: colors.danger }} />
               </Button>
             </Right>
