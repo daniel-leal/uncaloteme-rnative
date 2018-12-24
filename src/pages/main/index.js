@@ -160,7 +160,7 @@ export default class Main extends Component {
 
   deleteDebtor = async id => {
     try {
-      const deleteDebtorResponse = await api.delete(`/debtors/${id}`);
+      await api.delete(`/debtors/${id}`);
 
       // Create an array without deleted element
       const debtors = this.state.debtors.filter(debtor => debtor.id != id);
@@ -390,7 +390,14 @@ export default class Main extends Component {
   renderDebtors = () =>
     this.state.debtors.map(debtor => (
       <Card key={debtor.id} style={styles.item}>
-        <CardItem>
+        <CardItem
+          button
+          onPress={() =>
+            this.props.navigation.navigate("Debts", {
+              debtor: debtor
+            })
+          }
+        >
           <Left>
             {debtor.avatar ? (
               <Thumbnail source={{ uri: debtor.avatar }} />
