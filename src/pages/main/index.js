@@ -30,6 +30,7 @@ import FlashMessage from "../../components/flashMessage";
 export default class Main extends Component {
   static navigationOptions = {
     title: "Devedores",
+    headerBackTitle: null,
     headerStyle: {
       backgroundColor: colors.darker
     },
@@ -162,10 +163,12 @@ export default class Main extends Component {
     try {
       await api.delete(`/debtors/${id}`);
 
-      // Create an array without deleted element
+      // create an array without deleted element and replace in state
       const debtors = this.state.debtors.filter(debtor => debtor.id != id);
       this.setState({ debtors });
-    } catch (err) {}
+    } catch (err) {
+      console.log(err.response);
+    }
   };
   //#endregion
 

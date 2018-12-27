@@ -28,16 +28,24 @@ import FlashMessage from "../../components/flashMessage";
 //#endregion
 
 export default class Debts extends Component {
-  static navigationOptions = {
-    title: "Dívidas",
-    headerStyle: {
-      backgroundColor: colors.darker
-    },
-    headerTintColor: "#fff",
-    headerTitleStyle: {
-      fontWeight: "bold"
-    }
+  static navigationOptions = ({ navigation }) => {
+    return {
+      headerBackTitle: null,
+      title: `Dívidas ${navigation.getParam("debtor").name.split(" ")[0]}`,
+      headerStyle: {
+        backgroundColor: colors.darker
+      },
+      headerTintColor: "#fff",
+      headerTitleStyle: {
+        fontWeight: "bold"
+      }
+    };
   };
+
+  getCurrentDateString() {
+    return `${new Date().getUTCFullYear()}-${new Date().getMonth() +
+      1}-${new Date().getDate()}`;
+  }
 
   state = {
     addModalVisible: false,
@@ -45,13 +53,11 @@ export default class Debts extends Component {
     flashMessage: "",
     debts: [],
     debtData: {
-      date: "",
-      amount_paid: "",
+      date: this.getCurrentDateString(),
       value: "",
       description: ""
     },
     dateError: false,
-    amount_paidError: false,
     valueError: false,
     descriptionError: false
   };
@@ -69,6 +75,100 @@ export default class Debts extends Component {
     } catch (err) {
       console.log(err.response);
     }
+  };
+
+  saveDebt = async () => {
+    try {
+      const {
+        debtData: { date, value, description }
+      } = this.state;
+
+      const { navigation } = this.props;
+      const debtor_params = navigation.getParam("debtor");
+
+      const newDebtResponse = await api.post(
+        `/debtors/${debtor_params.id}/debts`,
+        {
+          debt: {
+            date: date,
+            is_active: true,
+            amount_paid: 0.0,
+            value: value,
+            description: description
+          }
+        }
+      );
+
+      this.setState({
+        debts: [newDebtResponse.data.data, ...this.state.debts]
+      });
+
+      this.setFlash("Cadastro realizado com sucesso!");
+      this.clearForm();
+      this.closeModal();
+    } catch (err) {
+      this.clearError();
+      const result = err.response.data;
+      console.log(result);
+
+      for (var key in result["errors"]) {
+        console.log(key);
+        if (key == "date") {
+          this.setState({ dateError: true });
+        } else if (key == "description") {
+          this.setState({ descriptionError: true });
+        } else if (key == "value") {
+          this.setState({ valueError: true });
+        }
+      }
+    }
+  };
+
+  deleteDebt = async id => {
+    try {
+      const { navigation } = this.props;
+      const debtor_params = navigation.getParam("debtor");
+
+      await api.delete(`/debtors/${debtor_params.id}/debts/${id}`);
+
+      // create an array without deleted element and replace in state
+      const debts = this.state.debts.filter(debt => debt.id != id);
+      this.setState({ debts });
+    } catch (err) {
+      console.log(err.response);
+    }
+  };
+  //#endregion
+
+  //#region Event Handles
+  handleDateChange = date => {
+    const { debtData } = this.state;
+    this.setState({
+      debtData: {
+        ...debtData,
+        date
+      }
+    });
+  };
+
+  handleValueChange = value => {
+    const { debtData } = this.state;
+    this.setState({
+      debtData: {
+        ...debtData,
+        value
+      }
+    });
+  };
+
+  handleDescriptionChange = description => {
+    const { debtData } = this.state;
+    this.setState({
+      debtData: {
+        ...debtData,
+        description
+      }
+    });
   };
   //#endregion
 
@@ -88,11 +188,20 @@ export default class Debts extends Component {
   clearForm = () => {
     this.setState({
       debtData: {
-        date: "",
+        date: this.getCurrentDateString(),
         amount_paid: "",
         value: "",
         description: ""
       },
+      dateError: false,
+      amount_paidError: false,
+      valueError: false,
+      descriptionError: false
+    });
+  };
+
+  clearError = () => {
+    this.setState({
       dateError: false,
       amount_paidError: false,
       valueError: false,
@@ -118,7 +227,7 @@ export default class Debts extends Component {
           <Input
             placeholder="Descrição"
             value={this.state.debtData.description}
-            onChangeText={() => {}}
+            onChangeText={this.handleDescriptionChange}
             autoCapitalize="none"
             autoCorrect={false}
           />
@@ -128,15 +237,29 @@ export default class Debts extends Component {
           <Input
             placeholder="Valor"
             value={this.state.debtData.value}
-            onChangeText={() => {}}
+            onChangeText={this.handleValueChange}
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="numbers-and-punctuation"
           />
         </Item>
+        <Item error={this.state.dateError}>
+          <Icon type="FontAwesome" active name="calendar" />
+          <Input
+            placeholder="Data (YYYY-MM-DD)"
+            value={this.state.debtData.date}
+            onChangeText={this.handleDateChange}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </Item>
       </Form>
       <View style={styles.actionModalButtons}>
-        <Button iconLeft style={styles.buttonSaveModal} onPress={() => {}}>
+        <Button
+          iconLeft
+          style={styles.buttonSaveModal}
+          onPress={() => this.saveDebt()}
+        >
           <Icon name="beer" />
           <Text>Salvar</Text>
         </Button>
@@ -158,15 +281,17 @@ export default class Debts extends Component {
       <Card key={debt.id} style={styles.item}>
         <CardItem>
           <Left>
-            <Icon
-              style={{ color: colors.darkGreen }}
-              type="FontAwesome"
-              name="money"
-            />
+            <Thumbnail source={require("../../images/bill.png")} />
             <Body>
               <Text style={{ fontWeight: "bold" }}>{debt.description}</Text>
               <Text style={[debt.is_active ? styles.devendo : styles.pago]}>
-                Valor: R${debt.value.replace(".", ",")}
+                R${debt.value.replace(".", ",")}
+              </Text>
+              <Text note>
+                {new Date(debt.date).toLocaleDateString(
+                  "pt-BR",
+                  (options = { timeZone: "UTC" })
+                )}
               </Text>
             </Body>
             <Right style={styles.actionButtons}>
@@ -179,7 +304,7 @@ export default class Debts extends Component {
                     [
                       {
                         text: "OK",
-                        onPress: () => alert("Delete pressed")
+                        onPress: () => this.deleteDebt(debt.id)
                       },
                       {
                         text: "Cancel",
