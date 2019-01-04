@@ -14,6 +14,7 @@ export default {
   gray: '#C0C0C0',
   green: '#37BEA9',
   darkGreen: '#198401',
+  roxo: '#3f51b5',
 
   transparent: 'transparent',
   darkTransparent: 'rgba(0, 0, 0, 0.6)',

@@ -89,6 +89,7 @@ export default class Main extends Component {
       this.clearForm();
       this.closeAddModal();
     } catch (err) {
+      this.clearError();
       const result = err.response.data;
       console.log(result);
 
@@ -209,6 +210,14 @@ export default class Main extends Component {
         email: "",
         phone: ""
       },
+      nameError: false,
+      emailError: false,
+      phoneError: false
+    });
+  };
+
+  clearError = () => {
+    this.setState({
       nameError: false,
       emailError: false,
       phoneError: false

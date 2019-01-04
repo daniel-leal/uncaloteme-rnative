@@ -27,7 +27,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
-    marginTop: 40
+    marginTop: 40,
+    color: colors.darker,
   },
 
   buttonSaveModal: {
@@ -62,7 +63,11 @@ const styles = StyleSheet.create({
 
   devendo: {
     color: colors.danger
-  }
+  },
+
+  iconColor: {
+    color: colors.gray
+  },
 
 });
 

@@ -22,7 +22,7 @@ import { StatusBar, Alert } from "react-native";
 
 import api from "../../services/api";
 import styles from "./styles";
-import { colors, metrics } from "../../styles";
+import { colors } from "../../styles";
 import Modal from "react-native-modalbox";
 import FlashMessage from "../../components/flashMessage";
 //#endregion
@@ -46,6 +46,13 @@ export default class Debts extends Component {
     return `${new Date().getUTCFullYear()}-${new Date().getMonth() +
       1}-${new Date().getDate()}`;
   }
+
+  getDebtorId = () => {
+    const { navigation } = this.props;
+    const debtor = navigation.getParam("debtor");
+
+    return debtor.id;
+  };
 
   state = {
     addModalVisible: false,
@@ -138,6 +145,20 @@ export default class Debts extends Component {
       console.log(err.response);
     }
   };
+
+  refresh = async () => {
+    try {
+      const { navigation } = this.props;
+      const debtor = navigation.getParam("debtor");
+
+      const response = await api.get(`/debtors/${debtor.id}/debts`);
+      console.log('entrou no refresh');
+
+      this.setState({ debts: response.data.data });
+    } catch (err) {
+      console.log(err.response);
+    }
+  }
   //#endregion
 
   //#region Event Handles
@@ -223,7 +244,7 @@ export default class Debts extends Component {
       <Text style={styles.modalTitle}>Incluir Dívida</Text>
       <Form>
         <Item error={this.state.descriptionError}>
-          <Icon active name="ios-pricetag" />
+          <Icon style={styles.iconColor} name="ios-pricetag" />
           <Input
             placeholder="Descrição"
             value={this.state.debtData.description}
@@ -233,7 +254,7 @@ export default class Debts extends Component {
           />
         </Item>
         <Item error={this.state.valueError}>
-          <Icon type="FontAwesome" active name="money" />
+          <Icon type="FontAwesome" style={styles.iconColor} name="money" />
           <Input
             placeholder="Valor"
             value={this.state.debtData.value}
@@ -244,7 +265,7 @@ export default class Debts extends Component {
           />
         </Item>
         <Item error={this.state.dateError}>
-          <Icon type="FontAwesome" active name="calendar" />
+          <Icon type="FontAwesome" style={styles.iconColor} name="calendar" />
           <Input
             placeholder="Data (YYYY-MM-DD)"
             value={this.state.debtData.date}
@@ -279,7 +300,16 @@ export default class Debts extends Component {
   renderDebts = () =>
     this.state.debts.map(debt => (
       <Card key={debt.id} style={styles.item}>
-        <CardItem>
+        <CardItem
+          button={debt.is_active}
+          onPress={() =>
+            this.props.navigation.navigate("DebtDetail", {
+              debt: debt,
+              debtor_id: this.getDebtorId(),
+              onGoBack: () => this.refresh(),
+            })
+          }
+        >
           <Left>
             <Thumbnail source={require("../../images/bill.png")} />
             <Body>
